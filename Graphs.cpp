@@ -6,37 +6,36 @@
 
 int main() {
 
-    bool repaet = true;
+    bool repeat = true;
     char per_ans[10] = {0};
     head_p *head_str = nullptr;
+
     head_str = (head_p *) calloc(sizeof(head_p), 1);
 
-/*    node_str *pointer_str_f = nullptr;
-    node_str *pointer_str_s = nullptr;
-    node_str *pointer_str_t = nullptr;
-    node_str *pointer_str_k = nullptr;
-    pointer_str_f = head_construct(head_str, "It is animal?");
-    pointer_str_s = add_elem(head_str, pointer_str_f, "Pet");
-    pointer_str_t = add_elem(head_str, pointer_str_f, "Human");
-    */
     introduce_graph(head_str);
-/*
-    while (repaet) {
+
+    while (repeat) {
         akinator(head_str);
         create_dot(head_str);
         write_graph(head_str);
-        system("say Are you wanting reapet game?");
-        std::cout << "Are you wanting reapet game?" << std::endl;
+        system("say Do you want to find definition of some words?");
+        std::cout << "Do you want to find definition of some words?" << std::endl;
+        std::cin >> per_ans;
+        if (!strcmp(per_ans, "yes")) {
+            system("say Write word");
+            std::cout << "Write word" << std::endl;
+            std::cin >> per_ans;
+            search_def(per_ans, head_str->son);
+        }
+        system("say Are you wanting repeat game?");
+        std::cout << "Are you wanting repeat game?" << std::endl;
         std::cin >> per_ans;
         if (!strcmp(per_ans, "yes"))
-            repaet = true;
+            repeat = true;
         if (!strcmp(per_ans, "no"))
-            repaet = false;
+            repeat = false;
     }
-    */
 
-    create_dot(head_str);
-    write_graph(head_str);
 }
 
 void akinator(head_p *head) {
@@ -154,23 +153,6 @@ void ans_no(head_p *head, node_str *element) {
 
 }
 
-node_str *head_construct(head_p *head, type_inf value) {
-
-    node_str *new_node = nullptr;
-
-    new_node = (node_str *) calloc(sizeof(node_str), 1);
-
-    new_node->data = value;
-    new_node->left = nullptr;
-    new_node->right = nullptr;
-    new_node->parent = nullptr;
-
-    head->amount++;
-    head->son = new_node;
-
-    return new_node;
-}
-
 
 node_str *add_elem(head_p *head, node_str *node, type_inf value) {
 
@@ -178,23 +160,103 @@ node_str *add_elem(head_p *head, node_str *node, type_inf value) {
 
     new_node = (node_str *) calloc(sizeof(node_str), 1);
 
+    new_node->data = strdup(value);
+    head->amount++;
+    new_node->parent = node;
+
+    if (node == nullptr) {
+        head->son = new_node;
+        return new_node;
+    }
+
     if (!node->left)
         node->left = new_node;
     else
         node->right = new_node;
 
-    new_node->data = value;
-
-    if (!new_node->left)
-        new_node->left = nullptr;
-    if (!new_node->right)
-        new_node->right = nullptr;
-    new_node->parent = nullptr;
-
-    head->amount++;
-
     return new_node;
 }
+
+
+void introduce_graph(head_p *head) {
+
+    FILE *source = fopen("/home/andrew/Graphs/cmake-build-debug/workspace/source.txt", "r");
+    char *buffer = nullptr;
+    int position = 0;
+
+    assert(source);
+    fseek(source, 0, SEEK_END);
+    long size_t = ftell(source);
+    fseek(source, 0, SEEK_SET);
+
+    buffer = (char *) calloc(sizeof(char *), size_t + 1);
+
+    fread(buffer, 1, size_t, source);
+
+    while (buffer[position] != '(')
+        position++;
+
+    create_tree(buffer, position, head, nullptr);
+
+    free(buffer);
+    fclose(source);
+}
+
+int create_tree(char *buf, int pos, head_p *head, node_str *node) {
+
+    node_str *new_elem = nullptr;
+    int count = 0;
+    char word[40] = {0};
+
+    if (buf[pos] == '(') {
+        pos += 2;
+        while (buf[pos] != '\"') {
+            assert(count < 39);
+            word[count++] = buf[pos++];
+        }
+        word[count] = '\0';
+        std::cout << "add this elem : " << word << std::endl;
+        new_elem = add_elem(head, node, word);
+    }
+
+    for (;;) {
+        while (buf[pos] != '(' && buf[pos] != ')')
+            pos++;
+
+        if (buf[pos] == ')')
+            return pos + 1;
+
+        if (buf[pos] == '(')
+            pos = create_tree(buf, pos, head, new_elem);
+    }
+}
+
+void search_def(type_inf value, node_str *elem) {
+
+    if (!strcmp(elem->data, value)) {
+        print_def(elem);
+        std::cout << std::endl;
+    }
+
+    if (elem->left) {
+        search_def(value, elem->left);
+    }
+
+    if (elem->right) {
+        search_def(value, elem->right);
+    }
+
+}
+
+void print_def(node_str *elem) {
+
+    if (elem->parent != nullptr) {
+        print_def(elem->parent);
+        std::cout << "->";
+    }
+    std::cout << elem->data;
+}
+
 
 void create_dot(head_p *head) {
 
@@ -232,119 +294,31 @@ void write_graph(head_p *head) {
 
     FILE *text = fopen("end.txt", "w");
 
-    print_node(head->son, text);
-    fprintf(text, ")");
+    print_node(head->son, text, 0);
     fclose(text);
 
 }
 
-void print_node(node_str *elem, FILE *text) {
+void print_node(node_str *elem, FILE *text, int b) {
 
-    static int b = 0;
 
     for (int k = 0; k < b; k++) {
         fprintf(text, "\t");
     }
 
     fprintf(text, "(\"%s\"\n", elem->data);
-    b++;
+
 
     if (elem->left) {
-        print_node(elem->left, text);
-        b--;
-        for (int k = 0; k < b; k++) {
-            fprintf(text, "\t");
-        }
-
-        fprintf(text, ")\n");
+        print_node(elem->left, text, b + 1);
     }
 
     if (elem->right) {
-        print_node(elem->right, text);
-        b--;
-        for (int k = 0; k < b; k++) {
-            fprintf(text, "\t");
-        }
-
-        fprintf(text, ")\n");
+        print_node(elem->right, text, b + 1);
     }
 
-}
-
-
-void introduce_graph(head_p *head) {
-
-    FILE *source = fopen("/home/andrew/Graphs/cmake-build-debug/workspace/source.txt", "r");
-    char *buffer = nullptr;
-
-    assert(source);
-    fseek(source, 0, SEEK_END);
-    long size_t = ftell(source);
-    fseek(source, 0, SEEK_SET);
-
-    buffer = (char *) calloc(sizeof(char *), size_t + 1);
-
-    fread(buffer, 1, size_t, source);
-
-    create_tree(buffer, head);
-
-
-    free(buffer);
-    fclose(source);
-}
-
-void create_tree(char *buf, head_p *head) {
-
-    char word[50] = {0};
-    int count = 2;
-    int pos = 0;
-    node_str *elem = head->son;
-
-
-    while (buf[count] != '\"')
-        word[pos++] = buf[count++];
-
-    head_construct(head, word);
-    fall_tree(head->son, buf, head, ++count);
-}
-
-
-void fall_tree(node_str *element, char *buf, head_p *head, int pos) {
-
-
-    int buf_pos = 0;
-    int count = pos;
-    char word[50] = {0};
-
-    std::cout << count << " : hi " << buf[count] << std::endl;
-
-    while (buf[count++]) {
-        std::cout << count << " : " << buf[count] << std::endl;
-        if (buf[count] == '(') {
-            count += 2;
-            std::cout << count << " ";
-            while (buf[count] != '\"') {
-                std::cout << buf[count];
-                word[buf_pos++] = buf[count++];
-            }
-            std::cout << std::endl;
-
-            element = add_elem(head, element, word);
-
-            break;
-        }
-        /*      if(buf[count] == ')') {
-                  element = prev_el;
-                  break;
-              }
-       */   }
-    while (!(buf[count] == ')' || buf[count] == '('))
-        count++;
-    std::cout << count << " :: " << buf[count] << std::endl;
-    std::cout << count + 1 << " :: " << buf[count + 1] << std::endl;
-
-    if (!(buf[count++] == ')'))
-        fall_tree(element, buf, head, count - 1);
-
-
+    for (int k = 0; k < b; k++) {
+        fprintf(text, "\t");
+    }
+    fprintf(text, ")\n");
 }
