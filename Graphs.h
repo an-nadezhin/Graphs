@@ -5,7 +5,6 @@
 #ifndef GRAPHS_GRAPHS_H
 #define GRAPHS_GRAPHS_H
 
-#define LENGTH_STR 40
 
 typedef char* type_inf;
 

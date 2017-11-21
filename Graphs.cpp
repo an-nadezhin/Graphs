@@ -180,7 +180,7 @@ node_str *add_elem(head_p *head, node_str *node, type_inf value) {
 
 void introduce_graph(head_p *head) {
 
-    FILE *source = fopen("/home/andrew/Graphs/cmake-build-debug/workspace/source.txt", "r");
+    FILE *source = fopen("/home/andrew/Graphs/workspace/source.txt", "r");
     char *buffer = nullptr;
     int position = 0;
 
@@ -215,7 +215,6 @@ int create_tree(char *buf, int pos, head_p *head, node_str *node) {
             word[count++] = buf[pos++];
         }
         word[count] = '\0';
-        std::cout << "add this elem : " << word << std::endl;
         new_elem = add_elem(head, node, word);
     }
 

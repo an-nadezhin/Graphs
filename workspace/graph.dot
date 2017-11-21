@@ -1,0 +1,11 @@
+digraph G{
+"animal?"->"fuzzy?";
+"fuzzy?"->"cat";
+"fuzzy?"->"dog";
+"animal?"->"human?";
+"human?"->"adult";
+"adult"->"parent";
+"adult"->"child";
+"human?"->"nobody";
+
+}
